@@ -1,0 +1,508 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Тело и проекция на xOy</title>
+  <style>
+    :root {
+      --bg: #0f1419;
+      --panel: #1a2332;
+      --ink: #e8eef6;
+      --muted: #8b9bb4;
+      --accent: #3d9cf0;
+      --cyl: #5eb8ff;
+      --parab: #f0a040;
+      --proj: #4ecf8a;
+      --edge: #c8d4e4;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    html, body { height: 100%; background: var(--bg); color: var(--ink); font-family: "Segoe UI", system-ui, sans-serif; }
+    body { display: grid; grid-template-columns: minmax(280px, 360px) 1fr; min-height: 100%; }
+    aside {
+      background: var(--panel);
+      padding: 1.25rem 1.35rem 1.5rem;
+      border-right: 1px solid #2a3648;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+    }
+    h1 { font-size: 1.15rem; font-weight: 650; letter-spacing: 0.01em; line-height: 1.35; }
+    h2 { font-size: 0.78rem; text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); font-weight: 600; }
+    p, li { font-size: 0.9rem; line-height: 1.5; color: var(--ink); }
+    .eq {
+      font-family: "Cambria Math", "Times New Roman", serif;
+      background: #121820;
+      border: 1px solid #2a3648;
+      border-radius: 6px;
+      padding: 0.65rem 0.8rem;
+      font-size: 0.92rem;
+      line-height: 1.55;
+    }
+    .eq code { font-family: inherit; }
+    ul { padding-left: 1.1rem; display: flex; flex-direction: column; gap: 0.35rem; }
+    .legend { display: flex; flex-direction: column; gap: 0.45rem; }
+    .swatch {
+      display: flex; align-items: center; gap: 0.55rem; font-size: 0.88rem;
+    }
+    .dot {
+      width: 12px; height: 12px; border-radius: 2px; flex-shrink: 0;
+    }
+    .controls { display: flex; flex-direction: column; gap: 0.55rem; }
+    label.ctrl {
+      display: flex; align-items: center; gap: 0.55rem;
+      font-size: 0.88rem; cursor: pointer; user-select: none;
+    }
+    label.ctrl input { accent-color: var(--accent); }
+    .result {
+      border: 1px solid #2a5540;
+      background: #122018;
+      border-radius: 6px;
+      padding: 0.75rem 0.85rem;
+    }
+    .result strong { color: var(--proj); font-weight: 650; }
+    #viewport { position: relative; min-height: 480px; }
+    canvas { display: block; width: 100%; height: 100%; }
+    .hint {
+      position: absolute; left: 12px; bottom: 12px;
+      font-size: 0.75rem; color: var(--muted);
+      background: rgba(15, 20, 25, 0.75);
+      padding: 0.35rem 0.55rem; border-radius: 4px;
+      pointer-events: none;
+    }
+    @media (max-width: 860px) {
+      body { grid-template-columns: 1fr; grid-template-rows: auto 1fr; }
+      aside { border-right: none; border-bottom: 1px solid #2a3648; max-height: 42vh; }
+      #viewport { min-height: 58vh; }
+    }
+  </style>
+</head>
+<body>
+  <aside>
+    <div>
+      <h1>Тело, ограниченное поверхностями</h1>
+    </div>
+
+    <div>
+      <h2>Уравнения</h2>
+      <div class="eq" style="margin-top:0.45rem">
+        x² + y² − 2y = 0<br />
+        3y² + z − 3 = 0<br />
+        z = 0
+      </div>
+    </div>
+
+    <div>
+      <h2>Поверхности</h2>
+      <ul style="margin-top:0.4rem">
+        <li><span style="color:var(--cyl)">Цилиндр</span>: x² + (y−1)² = 1 (ось ∥ Oz, центр (0,1), R=1)</li>
+        <li><span style="color:var(--parab)">Параболический цилиндр</span>: z = 3(1 − y²) (образующие ∥ Ox)</li>
+        <li>Плоскость z = 0 (основание)</li>
+      </ul>
+    </div>
+
+    <div class="result">
+      <h2 style="color:var(--proj); margin-bottom:0.4rem">Проекция D на xOy</h2>
+      <p>
+        Тело лежит между z = 0 и z = 3(1−y²) внутри цилиндра.
+        Высота ≥ 0 при |y| ≤ 1; цилиндр даёт y ∈ [0, 2], поэтому
+      </p>
+      <p style="margin-top:0.5rem">
+        <strong>D = { (x,y) : x² + (y−1)² ≤ 1, &nbsp; 0 ≤ y ≤ 1 }</strong>
+      </p>
+      <p style="margin-top:0.45rem; color:var(--muted); font-size:0.82rem">
+        Полудиск круга с центром (0,1) и радиусом 1, лежащий ниже диаметра y = 1
+        (включая границу).
+      </p>
+    </div>
+
+    <div>
+      <h2>Легенда</h2>
+      <div class="legend" style="margin-top:0.4rem">
+        <div class="swatch"><span class="dot" style="background:var(--cyl)"></span> Цилиндрическая боковая поверхность</div>
+        <div class="swatch"><span class="dot" style="background:var(--parab)"></span> Верх: z = 3(1−y²)</div>
+        <div class="swatch"><span class="dot" style="background:var(--proj)"></span> Проекция D на xOy</div>
+        <div class="swatch"><span class="dot" style="background:var(--edge)"></span> Оси координат</div>
+      </div>
+    </div>
+
+    <div>
+      <h2>Отображение</h2>
+      <div class="controls" style="margin-top:0.4rem">
+        <label class="ctrl"><input type="checkbox" id="showSolid" checked /> Тело (заливка)</label>
+        <label class="ctrl"><input type="checkbox" id="showCyl" checked /> Цилиндр</label>
+        <label class="ctrl"><input type="checkbox" id="showParab" checked /> Параболический цилиндр</label>
+        <label class="ctrl"><input type="checkbox" id="showProj" checked /> Проекция D</label>
+        <label class="ctrl"><input type="checkbox" id="showFullCyl" /> Полный круг цилиндра (для сравнения)</label>
+      </div>
+    </div>
+  </aside>
+
+  <div id="viewport">
+    <div class="hint">ЛКМ — вращение · колёсико — масштаб · ПКМ — сдвиг</div>
+  </div>
+
+  <script type="importmap">
+  {
+    "imports": {
+      "three": "https://unpkg.com/three@0.160.0/build/three.module.js",
+      "three/addons/": "https://unpkg.com/three@0.160.0/examples/jsm/"
+    }
+  }
+  </script>
+  <script type="module">
+    import * as THREE from "three";
+    import { OrbitControls } from "three/addons/controls/OrbitControls.js";
+
+    const viewport = document.getElementById("viewport");
+    const scene = new THREE.Scene();
+    scene.background = new THREE.Color(0x0f1419);
+
+    const camera = new THREE.PerspectiveCamera(42, 1, 0.05, 100);
+    camera.position.set(4.2, 3.4, 3.6);
+
+    const renderer = new THREE.WebGLRenderer({ antialias: true });
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+    viewport.appendChild(renderer.domElement);
+
+    const controls = new OrbitControls(camera, renderer.domElement);
+    controls.target.set(0, 0.9, 1.1);
+    controls.enableDamping = true;
+    controls.update();
+
+    scene.add(new THREE.AmbientLight(0xffffff, 0.55));
+    const key = new THREE.DirectionalLight(0xffffff, 0.85);
+    key.position.set(3, 5, 4);
+    scene.add(key);
+    const fill = new THREE.DirectionalLight(0x88aacc, 0.35);
+    fill.position.set(-3, 1, -2);
+    scene.add(fill);
+
+    // Axes: X red, Y green, Z blue — drawn as thin lines with labels via sprites skipped for clarity
+    const axes = new THREE.AxesHelper(3.2);
+    scene.add(axes);
+
+    // Grid on xOy
+    const grid = new THREE.GridHelper(6, 12, 0x334155, 0x1e293b);
+    grid.rotation.x = Math.PI / 2; // lie on z=0? GridHelper is XZ by default; we want XY plane (z=0)
+    // Default GridHelper is in XZ. Rotate so it lies in XY (z=0): rotate around X by 90°
+    // Actually: after rotation.x = PI/2, the grid is in XY plane. Good.
+    scene.add(grid);
+
+    const group = new THREE.Group();
+    scene.add(group);
+
+    const N = 64;
+
+    function pointOnCircle(t) {
+      // parametrize circle x^2+(y-1)^2=1, for lower half y in [0,1]: angle from -π/2 to π/2 around center (0,1)
+      // angle 0 at (1,1), positive CCW. Lower half: from π (left (-1,1)) going through (0,0) at -π/2 or 3π/2 to 0 (right)
+      // Use φ from π to 2π (or -π to 0): y = 1 + sin(φ), for φ ∈ [π, 2π]: sin from 0 to -1 to 0 → y from 1 to 0 to 1. Good.
+      const phi = Math.PI + t * Math.PI; // t in [0,1] → φ in [π, 2π]
+      return {
+        x: Math.cos(phi),
+        y: 1 + Math.sin(phi),
+      };
+    }
+
+    // Projection D: filled half-disk
+    function makeProjection() {
+      const shape = new THREE.Shape();
+      shape.moveTo(-1, 1);
+      for (let i = 0; i <= N; i++) {
+        const t = i / N;
+        const p = pointOnCircle(t);
+        shape.lineTo(p.x, p.y);
+      }
+      shape.lineTo(-1, 1);
+      const geo = new THREE.ShapeGeometry(shape);
+      const mat = new THREE.MeshBasicMaterial({
+        color: 0x4ecf8a,
+        transparent: true,
+        opacity: 0.45,
+        side: THREE.DoubleSide,
+        depthWrite: false,
+      });
+      const mesh = new THREE.Mesh(geo, mat);
+      mesh.position.z = 0.002;
+      // Outline
+      const pts = [];
+      for (let i = 0; i <= N; i++) {
+        const p = pointOnCircle(i / N);
+        pts.push(new THREE.Vector3(p.x, p.y, 0.004));
+      }
+      pts.push(new THREE.Vector3(-1, 1, 0.004));
+      pts.push(new THREE.Vector3(1, 1, 0.004));
+      const line = new THREE.Line(
+        new THREE.BufferGeometry().setFromPoints(pts),
+        new THREE.LineBasicMaterial({ color: 0x4ecf8a })
+      );
+      const g = new THREE.Group();
+      g.add(mesh);
+      g.add(line);
+      g.name = "proj";
+      return g;
+    }
+
+    // Full circle outline for comparison
+    function makeFullCircle() {
+      const pts = [];
+      for (let i = 0; i <= 96; i++) {
+        const a = (i / 96) * Math.PI * 2;
+        pts.push(new THREE.Vector3(Math.cos(a), 1 + Math.sin(a), 0.003));
+      }
+      return new THREE.Line(
+        new THREE.BufferGeometry().setFromPoints(pts),
+        new THREE.LineDashedMaterial({ color: 0x5eb8ff, dashSize: 0.08, gapSize: 0.05 })
+      );
+    }
+
+    // Cylinder wall over the solid (only arc y≤1), from z=0 to z=3(1-y²)
+    function makeCylinderWall() {
+      const positions = [];
+      const indices = [];
+      const rows = 24;
+      for (let i = 0; i <= N; i++) {
+        const p = pointOnCircle(i / N);
+        const zTop = 3 * (1 - p.y * p.y);
+        for (let j = 0; j <= rows; j++) {
+          const z = (j / rows) * zTop;
+          positions.push(p.x, p.y, z);
+        }
+      }
+      for (let i = 0; i < N; i++) {
+        for (let j = 0; j < rows; j++) {
+          const a = i * (rows + 1) + j;
+          const b = a + rows + 1;
+          indices.push(a, b, a + 1, b, b + 1, a + 1);
+        }
+      }
+      const geo = new THREE.BufferGeometry();
+      geo.setAttribute("position", new THREE.Float32BufferAttribute(positions, 3));
+      geo.setIndex(indices);
+      geo.computeVertexNormals();
+      const mat = new THREE.MeshPhongMaterial({
+        color: 0x5eb8ff,
+        transparent: true,
+        opacity: 0.35,
+        side: THREE.DoubleSide,
+        shininess: 40,
+        depthWrite: false,
+      });
+      return new THREE.Mesh(geo, mat);
+    }
+
+    // Top parabolic surface over D
+    function makeParabolicCap() {
+      const positions = [];
+      const indices = [];
+      // Sample in polar-like coords over half-disk: radial from center (0,1)
+      const Nr = 28;
+      const Nt = N;
+      // Center point
+      const centerIdx = 0;
+      positions.push(0, 1, 0); // z=0 at y=1
+      let idx = 1;
+      const ringStart = [];
+      for (let i = 0; i <= Nt; i++) {
+        ringStart.push([]);
+      }
+      for (let r = 1; r <= Nr; r++) {
+        const rr = r / Nr;
+        for (let i = 0; i <= Nt; i++) {
+          const p = pointOnCircle(i / Nt);
+          const x = rr * p.x;
+          const y = 1 + rr * (p.y - 1);
+          const z = 3 * (1 - y * y);
+          positions.push(x, y, z);
+          ringStart[i].push(idx++);
+        }
+      }
+      // triangles from center to first ring
+      for (let i = 0; i < Nt; i++) {
+        indices.push(centerIdx, ringStart[i][0], ringStart[i + 1][0]);
+      }
+      for (let r = 0; r < Nr - 1; r++) {
+        for (let i = 0; i < Nt; i++) {
+          const a = ringStart[i][r];
+          const b = ringStart[i + 1][r];
+          const c = ringStart[i][r + 1];
+          const d = ringStart[i + 1][r + 1];
+          indices.push(a, b, c, b, d, c);
+        }
+      }
+      const geo = new THREE.BufferGeometry();
+      geo.setAttribute("position", new THREE.Float32BufferAttribute(positions, 3));
+      geo.setIndex(indices);
+      geo.computeVertexNormals();
+      const mat = new THREE.MeshPhongMaterial({
+        color: 0xf0a040,
+        transparent: true,
+        opacity: 0.55,
+        side: THREE.DoubleSide,
+        shininess: 60,
+        depthWrite: false,
+      });
+      return new THREE.Mesh(geo, mat);
+    }
+
+    // Solid volume as stacked vertical "fins" / translucent prism strips (visual fill)
+    function makeSolidFill() {
+      const g = new THREE.Group();
+      const mat = new THREE.MeshPhongMaterial({
+        color: 0x7ec8ff,
+        transparent: true,
+        opacity: 0.22,
+        side: THREE.DoubleSide,
+        depthWrite: false,
+      });
+      const Nr = 16;
+      const Nt = 36;
+      for (let r = 1; r <= Nr; r++) {
+        const rr = r / Nr;
+        for (let i = 0; i < Nt; i++) {
+          const t0 = i / Nt;
+          const t1 = (i + 1) / Nt;
+          const p0 = pointOnCircle(t0);
+          const p1 = pointOnCircle(t1);
+          const x0 = rr * p0.x, y0 = 1 + rr * (p0.y - 1);
+          const x1 = rr * p1.x, y1 = 1 + rr * (p1.y - 1);
+          const z0 = 3 * (1 - y0 * y0);
+          const z1 = 3 * (1 - y1 * y1);
+          if (z0 < 1e-4 && z1 < 1e-4) continue;
+          const positions = new Float32Array([
+            x0, y0, 0,  x1, y1, 0,  x1, y1, z1,  x0, y0, z0,
+          ]);
+          const geo = new THREE.BufferGeometry();
+          geo.setAttribute("position", new THREE.BufferAttribute(positions, 3));
+          geo.setIndex([0, 1, 2, 0, 2, 3]);
+          geo.computeVertexNormals();
+          g.add(new THREE.Mesh(geo, mat));
+        }
+      }
+      // Diameter wall at y=1 (height 0 — skip)
+      // Arc wall already separate
+      return g;
+    }
+
+    // Extended parabolic cylinder sheet (for context)
+    function makeParabSheet() {
+      const positions = [];
+      const indices = [];
+      const Nx = 20, Ny = 40;
+      const xMin = -1.4, xMax = 1.4, yMin = -0.2, yMax = 1.2;
+      for (let j = 0; j <= Ny; j++) {
+        for (let i = 0; i <= Nx; i++) {
+          const x = xMin + (xMax - xMin) * (i / Nx);
+          const y = yMin + (yMax - yMin) * (j / Ny);
+          const z = 3 * (1 - y * y);
+          positions.push(x, y, z);
+        }
+      }
+      for (let j = 0; j < Ny; j++) {
+        for (let i = 0; i < Nx; i++) {
+          const a = j * (Nx + 1) + i;
+          indices.push(a, a + 1, a + Nx + 1, a + 1, a + Nx + 2, a + Nx + 1);
+        }
+      }
+      const geo = new THREE.BufferGeometry();
+      geo.setAttribute("position", new THREE.Float32BufferAttribute(positions, 3));
+      geo.setIndex(indices);
+      geo.computeVertexNormals();
+      return new THREE.Mesh(
+        geo,
+        new THREE.MeshPhongMaterial({
+          color: 0xf0a040,
+          transparent: true,
+          opacity: 0.12,
+          side: THREE.DoubleSide,
+          depthWrite: false,
+        })
+      );
+    }
+
+    // Diameter chord at y=1 on base
+    function makeDiameter() {
+      return new THREE.Line(
+        new THREE.BufferGeometry().setFromPoints([
+          new THREE.Vector3(-1, 1, 0.005),
+          new THREE.Vector3(1, 1, 0.005),
+        ]),
+        new THREE.LineBasicMaterial({ color: 0x4ecf8a })
+      );
+    }
+
+    const proj = makeProjection();
+    const cylWall = makeCylinderWall();
+    const cap = makeParabolicCap();
+    const solid = makeSolidFill();
+    const parabSheet = makeParabSheet();
+    const fullCyl = makeFullCircle();
+    fullCyl.computeLineDistances();
+    fullCyl.visible = false;
+    const diam = makeDiameter();
+
+    group.add(proj);
+    group.add(diam);
+    group.add(cylWall);
+    group.add(cap);
+    group.add(solid);
+    group.add(parabSheet);
+    group.add(fullCyl);
+
+    // Remap: Three.js Y-up → our math: keep X, use Three Y as math Z, Three Z as math -Y? 
+    // Easier: rotate group so math Z becomes Three Y (up)
+    group.rotation.x = -Math.PI / 2;
+    // After this: math (x,y,z) → three (x, z, -y) roughly... 
+    // Mesh coords were (x,y,z) with z up in data. rotation.x = -90°: (x,y,z)->(x,z,-y). So Three Y = math z (up). Good.
+    grid.rotation.set(0, 0, 0); // reset — we want grid on math z=0 which is Three XZ after group rot... 
+    // Actually grid is NOT in group. Scene has Y-up. After group.rotation.x=-PI/2, solid sits with height along Three Y.
+    // Base is in Three XZ plane (math xy). Default GridHelper is XZ — perfect, leave grid unrotated.
+    scene.remove(grid);
+    const grid2 = new THREE.GridHelper(6, 12, 0x334155, 0x1e293b);
+    scene.add(grid2);
+
+    // Reposition camera for Y-up view
+    camera.position.set(3.8, 2.8, 3.5);
+    controls.target.set(0, 1.0, -0.8);
+    controls.update();
+
+    const elSolid = document.getElementById("showSolid");
+    const elCyl = document.getElementById("showCyl");
+    const elParab = document.getElementById("showParab");
+    const elProj = document.getElementById("showProj");
+    const elFull = document.getElementById("showFullCyl");
+
+    function syncVisibility() {
+      solid.visible = elSolid.checked;
+      cylWall.visible = elCyl.checked;
+      cap.visible = elParab.checked;
+      parabSheet.visible = elParab.checked;
+      proj.visible = elProj.checked;
+      diam.visible = elProj.checked;
+      fullCyl.visible = elFull.checked;
+    }
+    [elSolid, elCyl, elParab, elProj, elFull].forEach((el) =>
+      el.addEventListener("change", syncVisibility)
+    );
+
+    function resize() {
+      const w = viewport.clientWidth;
+      const h = viewport.clientHeight;
+      camera.aspect = w / Math.max(h, 1);
+      camera.updateProjectionMatrix();
+      renderer.setSize(w, h, false);
+    }
+    window.addEventListener("resize", resize);
+    resize();
+
+    function animate() {
+      requestAnimationFrame(animate);
+      controls.update();
+      renderer.render(scene, camera);
+    }
+    animate();
+  </script>
+</body>
+</html>
